@@ -1,0 +1,146 @@
+using System.Net.Sockets;
+using EnergyAnalyzer.Models;
+using NModbus;
+
+namespace EnergyAnalyzer.Services
+{
+    public interface IModbusService
+    {
+        Task<EnergyData> ReadEnergyDataAsync();
+        bool IsConnected { get; }
+    }
+
+    public class ModbusService : IModbusService, IDisposable
+    {
+        private readonly ModbusSettings _settings;
+        private readonly ILogger<ModbusService> _logger;
+        private TcpClient? _tcpClient;
+        private IModbusMaster? _master;
+        private readonly object _lock = new();
+
+        public bool IsConnected => _tcpClient?.Connected ?? false;
+
+        public ModbusService(ILogger<ModbusService> logger)
+        {
+            _logger = logger;
+            _settings = new ModbusSettings();
+        }
+
+        private async Task<bool> EnsureConnectedAsync()
+        {
+            if (_tcpClient?.Connected == true)
+                return true;
+
+            try
+            {
+                _tcpClient?.Dispose();
+                _tcpClient = new TcpClient();
+                
+                var connectTask = _tcpClient.ConnectAsync(_settings.IpAddress, _settings.Port);
+                if (await Task.WhenAny(connectTask, Task.Delay(5000)) != connectTask)
+                {
+                    throw new TimeoutException("Modbus bağlantı zaman aşımı");
+                }
+
+                var factory = new ModbusFactory();
+                _master = factory.CreateMaster(_tcpClient);
+                _master.Transport.ReadTimeout = 3000;
+                _master.Transport.WriteTimeout = 3000;
+
+                _logger.LogInformation("Modbus bağlantısı başarılı: {Ip}:{Port}", _settings.IpAddress, _settings.Port);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Modbus bağlantı hatası");
+                return false;
+            }
+        }
+
+        public async Task<EnergyData> ReadEnergyDataAsync()
+        {
+            var data = new EnergyData();
+
+            try
+            {
+                lock (_lock)
+                {
+                    if (!EnsureConnectedAsync().Result)
+                    {
+                        data.IsConnected = false;
+                        data.ErrorMessage = "Cihaza bağlanılamadı";
+                        return data;
+                    }
+
+                    // Registerleri oku (Address 2-27 arası = 26 register)
+                    // H2_Vab=2, H2_Vbc=4, H2_Vca=6, H2_Ia=8, H2_Ib=10, H2_Ic=12
+                    // H2_P=14, H2_S=16, H2_Q=18, H2_WPplus=20, H2_WPminus=22, H2_WQplus=24, H2_WQminus=26
+                    var registers = _master!.ReadHoldingRegisters(_settings.SlaveId, 2, 26);
+
+                    // Float32 değerlerini dönüştür (offset 2'den başladığı için index'leri ayarla)
+                    // H2_Vab (Address 2) -> index 0
+                    data.Voltage_AB = GetFloat32(registers, 0);
+                    // H2_Vbc (Address 4) -> index 2
+                    data.Voltage_BC = GetFloat32(registers, 2);
+                    // H2_Vca (Address 6) -> index 4
+                    data.Voltage_CA = GetFloat32(registers, 4);
+                    
+                    // H2_Ia (Address 8) -> index 6
+                    data.Current_A = GetFloat32(registers, 6);
+                    // H2_Ib (Address 10) -> index 8
+                    data.Current_B = GetFloat32(registers, 8);
+                    // H2_Ic (Address 12) -> index 10
+                    data.Current_C = GetFloat32(registers, 10);
+                    
+                    // H2_P (Address 14) -> index 12
+                    data.ActivePower = GetFloat32(registers, 12);
+                    // H2_S (Address 16) -> index 14
+                    data.ApparentPower = GetFloat32(registers, 14);
+                    // H2_Q (Address 18) -> index 16
+                    data.ReactivePower = GetFloat32(registers, 16);
+                    
+                    // H2_WPplus (Address 20) -> index 18
+                    data.ActiveEnergyImport = GetFloat32(registers, 18);
+                    // H2_WPminus (Address 22) -> index 20
+                    data.ActiveEnergyExport = GetFloat32(registers, 20);
+                    // H2_WQplus (Address 24) -> index 22
+                    data.ReactiveEnergyImport = GetFloat32(registers, 22);
+                    // H2_WQminus (Address 26) -> index 24
+                    data.ReactiveEnergyExport = GetFloat32(registers, 24);
+
+                    data.IsConnected = true;
+                    data.Timestamp = DateTime.Now;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Modbus okuma hatası");
+                data.IsConnected = false;
+                data.ErrorMessage = ex.Message;
+                
+                // Bağlantıyı sıfırla
+                _tcpClient?.Dispose();
+                _tcpClient = null;
+            }
+
+            return data;
+        }
+
+        private static float GetFloat32(ushort[] registers, int startIndex)
+        {
+            // Big Endian Float32: High word first
+            var bytes = new byte[4];
+            bytes[0] = (byte)(registers[startIndex + 1] & 0xFF);
+            bytes[1] = (byte)(registers[startIndex + 1] >> 8);
+            bytes[2] = (byte)(registers[startIndex] & 0xFF);
+            bytes[3] = (byte)(registers[startIndex] >> 8);
+            
+            return BitConverter.ToSingle(bytes, 0);
+        }
+
+        public void Dispose()
+        {
+            _tcpClient?.Dispose();
+        }
+    }
+}

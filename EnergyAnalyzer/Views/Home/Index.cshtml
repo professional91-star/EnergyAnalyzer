@@ -1,0 +1,466 @@
+@{
+    ViewData["Title"] = "Enerji Analizörü";
+}
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"]</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background-color: #f5f5f5;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .navbar {
+            background-color: #2c3e50;
+        }
+        .card {
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .card-header {
+            background-color: #3498db;
+            color: white;
+            font-weight: 600;
+            border-radius: 8px 8px 0 0 !important;
+        }
+        .card-header.voltage {
+            background-color: #e74c3c;
+        }
+        .card-header.current {
+            background-color: #f39c12;
+        }
+        .card-header.power {
+            background-color: #27ae60;
+        }
+        .card-header.energy {
+            background-color: #9b59b6;
+        }
+        .value-display {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .unit {
+            font-size: 0.9rem;
+            color: #7f8c8d;
+        }
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        .status-online {
+            background-color: #27ae60;
+            animation: pulse 2s infinite;
+        }
+        .status-offline {
+            background-color: #e74c3c;
+        }
+        @@keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .data-table th {
+            background-color: #ecf0f1;
+            font-weight: 600;
+        }
+        .chart-container {
+            position: relative;
+            height: 250px;
+        }
+        .timestamp {
+            font-size: 0.85rem;
+            color: #95a5a6;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-dark navbar-expand-lg mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <img src="/images/cgt.jpg" alt="CGT" height="40" class="me-2">
+                CGT PowerMeter
+            </a>
+            <div class="navbar-nav me-auto">
+                <a class="nav-link active text-white" href="/Home/Index">
+                    <i class="fas fa-industry me-1"></i> ISIKKURE
+                </a>
+                <a class="nav-link text-white-50" href="/Home/IsikYuvar">
+                    <i class="fas fa-industry me-1"></i> ISIKYUVAR
+                </a>
+            </div>
+            <span class="text-white">
+                <span class="status-indicator status-online" id="statusIndicator"></span>
+                <span id="connectionStatus">Bağlı</span>
+            </span>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Durum Bilgisi -->
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="alert alert-info mb-0">
+                    <i class="fas fa-solar-panel me-2"></i>
+                    <strong>Santral Adı:</strong> ISIKKURE | 
+                    <strong>Son Güncelleme:</strong> <span id="lastUpdate" class="timestamp">--</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gerilim Değerleri -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header voltage">
+                        <i class="fas fa-bolt me-2"></i>Gerilim Değerleri
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-md-2">
+                                <div class="value-display" id="vab">--</div>
+                                <div class="unit">Vab (V)</div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="value-display" id="vbc">--</div>
+                                <div class="unit">Vbc (V)</div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="value-display" id="vca">--</div>
+                                <div class="unit">Vca (V)</div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="value-display" id="ia">--</div>
+                                <div class="unit">Ia (A)</div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="value-display" id="ib">--</div>
+                                <div class="unit">Ib (A)</div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="value-display" id="ic">--</div>
+                                <div class="unit">Ic (A)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Güç Değerleri -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header power">
+                        <i class="fas fa-tachometer-alt me-2"></i>Güç Değerleri
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-md-3">
+                                <div class="value-display" id="activePower">--</div>
+                                <div class="unit">Aktif Güç (kW)</div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="value-display" id="reactivePower">--</div>
+                                <div class="unit">Reaktif Güç (kVAR)</div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="value-display" id="apparentPower">--</div>
+                                <div class="unit">Görünür Güç (kVA)</div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="value-display" id="powerFactor">--</div>
+                                <div class="unit">Güç Faktörü</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Enerji Değerleri -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header energy">
+                        <i class="fas fa-battery-full me-2"></i>Enerji Değerleri
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-md-3">
+                                <div class="value-display" id="wpPlus">--</div>
+                                <div class="unit">Aktif Enerji + (MWh)</div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="value-display" id="wpMinus">--</div>
+                                <div class="unit">Aktif Enerji - (MWh)</div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="value-display" id="wqPlus">--</div>
+                                <div class="unit">Reaktif Enerji + (MVARh)</div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="value-display" id="wqMinus">--</div>
+                                <div class="unit">Reaktif Enerji - (MVARh)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Grafikler -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header voltage">
+                        <i class="fas fa-chart-line me-2"></i>Gerilim Grafiği
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="voltageChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header power">
+                        <i class="fas fa-chart-area me-2"></i>Güç Grafiği
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="powerChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.0/signalr.min.js"></script>
+    
+    <script>
+        // Grafik verileri - 10 dakikalık (600 saniye)
+        const maxDataPoints = 600;
+        const timeLabels = [];
+        const voltageData = { vab: [], vbc: [], vca: [] };
+        const powerData = { active: [], reactive: [], apparent: [] };
+
+        // Gerilim Grafiği
+        const voltageChart = new Chart(document.getElementById('voltageChart'), {
+            type: 'line',
+            data: {
+                labels: timeLabels,
+                datasets: [
+                    {
+                        label: 'Vab',
+                        data: voltageData.vab,
+                        borderColor: '#e74c3c',
+                        backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                        borderWidth: 2,
+                        fill: false,
+                        tension: 0.3,
+                        pointRadius: 0
+                    },
+                    {
+                        label: 'Vbc',
+                        data: voltageData.vbc,
+                        borderColor: '#3498db',
+                        backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                        borderWidth: 2,
+                        fill: false,
+                        tension: 0.3,
+                        pointRadius: 0
+                    },
+                    {
+                        label: 'Vca',
+                        data: voltageData.vca,
+                        borderColor: '#f39c12',
+                        backgroundColor: 'rgba(243, 156, 18, 0.1)',
+                        borderWidth: 2,
+                        fill: false,
+                        tension: 0.3,
+                        pointRadius: 0
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        title: {
+                            display: true,
+                            text: 'Volt (V)'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Zaman'
+                        }
+                    }
+                }
+            }
+        });
+
+        // Güç Grafiği
+        const powerChart = new Chart(document.getElementById('powerChart'), {
+            type: 'line',
+            data: {
+                labels: timeLabels,
+                datasets: [
+                    {
+                        label: 'Aktif Güç (kW)',
+                        data: powerData.active,
+                        borderColor: '#27ae60',
+                        backgroundColor: 'rgba(39, 174, 96, 0.2)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 0
+                    },
+                    {
+                        label: 'Reaktif Güç (kVAR)',
+                        data: powerData.reactive,
+                        borderColor: '#9b59b6',
+                        backgroundColor: 'rgba(155, 89, 182, 0.1)',
+                        borderWidth: 2,
+                        fill: false,
+                        tension: 0.3,
+                        pointRadius: 0
+                    },
+                    {
+                        label: 'Görünür Güç (kVA)',
+                        data: powerData.apparent,
+                        borderColor: '#e67e22',
+                        backgroundColor: 'rgba(230, 126, 34, 0.1)',
+                        borderWidth: 2,
+                        fill: false,
+                        tension: 0.3,
+                        pointRadius: 0
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Güç'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Zaman'
+                        }
+                    }
+                }
+            }
+        });
+
+        // SignalR bağlantısı
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/energyHub")
+            .withAutomaticReconnect()
+            .build();
+
+        connection.on("ReceiveEnergyData", function (data) {
+            // Değerleri güncelle
+            document.getElementById('vab').textContent = data.vab.toFixed(1);
+            document.getElementById('vbc').textContent = data.vbc.toFixed(1);
+            document.getElementById('vca').textContent = data.vca.toFixed(1);
+            document.getElementById('ia').textContent = (data.ia * 0.001).toFixed(3);
+            document.getElementById('ib').textContent = (data.ib * 0.001).toFixed(3);
+            document.getElementById('ic').textContent = (data.ic * 0.001).toFixed(3);
+            document.getElementById('activePower').textContent = data.activePower.toFixed(2);
+            document.getElementById('reactivePower').textContent = data.reactivePower.toFixed(2);
+            document.getElementById('apparentPower').textContent = data.apparentPower.toFixed(2);
+            document.getElementById('powerFactor').textContent = data.powerFactor.toFixed(3);
+            document.getElementById('wpPlus').textContent = (data.wpPlus / 1000).toFixed(3);
+            document.getElementById('wpMinus').textContent = (data.wpMinus / 1000).toFixed(3);
+            document.getElementById('wqPlus').textContent = (data.wqPlus / 1000).toFixed(3);
+            document.getElementById('wqMinus').textContent = (data.wqMinus / 1000).toFixed(3);
+
+            // Zaman damgası
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('tr-TR');
+            document.getElementById('lastUpdate').textContent = now.toLocaleString('tr-TR');
+
+            // Grafik verilerini güncelle
+            if (timeLabels.length >= maxDataPoints) {
+                timeLabels.shift();
+                voltageData.vab.shift();
+                voltageData.vbc.shift();
+                voltageData.vca.shift();
+                powerData.active.shift();
+                powerData.reactive.shift();
+                powerData.apparent.shift();
+            }
+
+            timeLabels.push(timeStr);
+            voltageData.vab.push(data.vab);
+            voltageData.vbc.push(data.vbc);
+            voltageData.vca.push(data.vca);
+            powerData.active.push(data.activePower);
+            powerData.reactive.push(data.reactivePower);
+            powerData.apparent.push(data.apparentPower);
+
+            voltageChart.update('none');
+            powerChart.update('none');
+
+            // Bağlantı durumu
+            document.getElementById('statusIndicator').className = 'status-indicator status-online';
+            document.getElementById('connectionStatus').textContent = 'Bağlı';
+        });
+
+        connection.onclose(function () {
+            document.getElementById('statusIndicator').className = 'status-indicator status-offline';
+            document.getElementById('connectionStatus').textContent = 'Bağlantı Kesildi';
+        });
+
+        connection.onreconnecting(function () {
+            document.getElementById('statusIndicator').className = 'status-indicator status-offline';
+            document.getElementById('connectionStatus').textContent = 'Yeniden Bağlanıyor...';
+        });
+
+        connection.onreconnected(function () {
+            document.getElementById('statusIndicator').className = 'status-indicator status-online';
+            document.getElementById('connectionStatus').textContent = 'Bağlı';
+        });
+
+        connection.start().catch(function (err) {
+            console.error(err.toString());
+            document.getElementById('statusIndicator').className = 'status-indicator status-offline';
+            document.getElementById('connectionStatus').textContent = 'Bağlantı Hatası';
+        });
+    </script>
+</body>
+</html>

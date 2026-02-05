@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "nKhZ4fQCyG4=",
+  "success": true,
+  "projectFilePath": "c:\\Users\\SAAS\\Desktop\\CGT\\EnergyAnalyzer\\EnergyAnalyzer.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\SAAS\\.nuget\\packages\\nmodbus\\3.0.81\\nmodbus.3.0.81.nupkg.sha512"
+  ],
+  "logs": []
+}
