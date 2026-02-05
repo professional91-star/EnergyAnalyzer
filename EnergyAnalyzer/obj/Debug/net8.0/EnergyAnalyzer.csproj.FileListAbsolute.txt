@@ -31,3 +31,4 @@ c:\Users\SAAS\Desktop\CGT\EnergyAnalyzer\obj\Debug\net8.0\EnergyAnalyzer.pdb
 c:\Users\SAAS\Desktop\CGT\EnergyAnalyzer\obj\Debug\net8.0\EnergyAnalyzer.genruntimeconfig.cache
 c:\Users\SAAS\Desktop\CGT\EnergyAnalyzer\obj\Debug\net8.0\ref\EnergyAnalyzer.dll
 c:\Users\SAAS\Desktop\CGT\EnergyAnalyzer\bin\Debug\net8.0\EnergyAnalyzer.staticwebassets.runtime.json
+c:\Users\SAAS\Desktop\CGT\EnergyAnalyzer\obj\Debug\net8.0\EnergyAnalyzer.sourcelink.json
