@@ -1,0 +1,10 @@
+**/.git
+**/.vs
+**/bin
+**/obj
+**/publish
+**/.idea
+**/Thumbs.db
+**/*.user
+**/*.suo
+.ftpquota
