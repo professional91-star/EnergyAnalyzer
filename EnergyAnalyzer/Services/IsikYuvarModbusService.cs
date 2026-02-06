@@ -7,6 +7,7 @@ namespace EnergyAnalyzer.Services
     public interface IIsikYuvarModbusService
     {
         Task<EnergyData> ReadEnergyDataAsync();
+        Task<bool> WriteCoilAsync(ushort address, bool value);
         bool IsConnected { get; }
     }
 
@@ -121,6 +122,32 @@ namespace EnergyAnalyzer.Services
             bytes[3] = (byte)(registers[startIndex] >> 8);
             
             return BitConverter.ToSingle(bytes, 0);
+        }
+
+        public async Task<bool> WriteCoilAsync(ushort address, bool value)
+        {
+            try
+            {
+                lock (_lock)
+                {
+                    if (!EnsureConnectedAsync().Result)
+                    {
+                        _logger.LogError("ISIKYUVAR Coil yazma hatası: Bağlantı yok");
+                        return false;
+                    }
+
+                    _master!.WriteSingleCoil(_settings.SlaveId, address, value);
+                    _logger.LogInformation("ISIKYUVAR Coil yazıldı: Address={Address}, Value={Value}", address, value);
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "ISIKYUVAR Coil yazma hatası: Address={Address}", address);
+                _tcpClient?.Dispose();
+                _tcpClient = null;
+                return false;
+            }
         }
 
         public void Dispose()
