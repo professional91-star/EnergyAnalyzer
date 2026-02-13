@@ -1,0 +1,736 @@
+@{
+    ViewData["Title"] = "YBT ENERJİ - Santral Özet Paneli";
+}
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"]</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background-color: #0f0f1a;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #eee;
+            overflow-x: hidden;
+        }
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 260px;
+            height: 100vh;
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+            border-right: 1px solid #2a3f5f;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+        .sidebar-header {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid #2a3f5f;
+            background: linear-gradient(135deg, #0d47a1, #1565c0);
+        }
+        .sidebar-header img {
+            height: 50px;
+            margin-bottom: 10px;
+        }
+        .sidebar-header h5 {
+            color: #fff;
+            margin: 0;
+            font-weight: 700;
+        }
+        .sidebar-menu {
+            padding: 15px 0;
+        }
+        .menu-group {
+            margin-bottom: 10px;
+        }
+        .menu-group-title {
+            padding: 10px 20px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: #6c7a89;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+        .menu-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: #b0bec5;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+        .menu-item:hover {
+            background-color: rgba(255,255,255,0.05);
+            color: #fff;
+            border-left-color: #4fc3f7;
+        }
+        .menu-item.active {
+            background-color: rgba(79, 195, 247, 0.1);
+            color: #4fc3f7;
+            border-left-color: #4fc3f7;
+        }
+        .menu-item i {
+            width: 24px;
+            margin-right: 12px;
+            font-size: 1rem;
+        }
+        .menu-item .status-dot {
+            margin-left: auto;
+        }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .status-online {
+            background-color: #4caf50;
+            box-shadow: 0 0 8px #4caf50;
+        }
+        .status-offline {
+            background-color: #f44336;
+        }
+        /* Main Content */
+        .main-content {
+            margin-left: 260px;
+            min-height: 100vh;
+            padding: 15px 20px;
+        }
+        /* Top Header */
+        .top-header {
+            background: linear-gradient(135deg, #1565c0 0%, #0d47a1 50%, #01579b 100%);
+            border-radius: 12px;
+            padding: 12px 20px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .company-info {
+            display: flex;
+            flex-direction: column;
+        }
+        .company-title {
+            font-size: 0.75rem;
+            color: #90caf9;
+            font-weight: 500;
+        }
+        .main-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #fff;
+        }
+        .total-power-display {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+        }
+        .total-power-value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #fff;
+            line-height: 1;
+        }
+        .total-power-unit {
+            font-size: 1rem;
+            color: #90caf9;
+            font-weight: 500;
+        }
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 25px;
+        }
+        .header-stat {
+            text-align: center;
+        }
+        .header-stat-value {
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+        .header-stat-value.green { color: #4caf50; }
+        .header-stat-value.pink { color: #e91e63; }
+        .header-stat-label {
+            font-size: 0.65rem;
+            color: #90caf9;
+        }
+        .datetime {
+            text-align: right;
+            color: #90caf9;
+            font-size: 0.75rem;
+        }
+        .datetime .time {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #fff;
+        }
+        /* Plant Cards Section */
+        .section-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 10px;
+            padding-left: 10px;
+            border-left: 3px solid #4fc3f7;
+        }
+        .plants-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+        .plant-card {
+            background: linear-gradient(145deg, #1f2940, #16213e);
+            border: 1px solid #2a3f5f;
+            border-radius: 10px;
+            padding: 12px 15px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        .plant-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            border-color: #4fc3f7;
+        }
+        .plant-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #2a3f5f;
+        }
+        .plant-name {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #4fc3f7;
+            flex: 1;
+        }
+        .plant-metrics {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+        .metric {
+            text-align: center;
+            padding: 6px 4px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 6px;
+        }
+        .metric-value {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #fff;
+        }
+        .metric-value.power { color: #4caf50; }
+        .metric-value.voltage { color: #ff9800; }
+        .metric-value.current { color: #2196f3; }
+        .metric-value.energy { color: #e91e63; }
+        .metric-label {
+            font-size: 0.6rem;
+            color: #8892a0;
+            text-transform: uppercase;
+            margin-top: 3px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <img src="/images/cgt.jpg" alt="CGT">
+            <h5>YBT ENERJİ</h5>
+        </div>
+        <div class="sidebar-menu">
+            <div class="menu-group">
+                <div class="menu-group-title">Ana Menü</div>
+                <a href="/Home/Dashboard" class="menu-item active">
+                    <i class="fas fa-tachometer-alt"></i>
+                    Dashboard
+                </a>
+            </div>
+            <div class="menu-group">
+                <div class="menu-group-title">KORKUTELİ GES</div>
+                <a href="/Home/Index" class="menu-item">
+                    <i class="fas fa-industry"></i>
+                    ISIKKURE
+                    <span class="status-dot status-offline" id="sidebar-status-korkuteli-isikkure"></span>
+                </a>
+                <a href="/Home/IsikYuvar" class="menu-item">
+                    <i class="fas fa-industry"></i>
+                    ISIKYUVAR
+                    <span class="status-dot status-offline" id="sidebar-status-korkuteli-isikyuvar"></span>
+                </a>
+            </div>
+            <div class="menu-group">
+                <div class="menu-group-title">HASANOĞLAN GES</div>
+                <a href="/Home/Hasanoglan" class="menu-item">
+                    <i class="fas fa-industry"></i>
+                    YBT
+                    <span class="status-dot status-offline" id="sidebar-status-hasanoglan-ybt"></span>
+                </a>
+                <a href="/Home/HasanoglanIsikYuvar" class="menu-item">
+                    <i class="fas fa-industry"></i>
+                    IŞIKYUVAR
+                    <span class="status-dot status-offline" id="sidebar-status-hasanoglan-isikyuvar"></span>
+                </a>
+                <a href="/Home/HasanoglanIsikKure" class="menu-item">
+                    <i class="fas fa-industry"></i>
+                    IŞIKKURE
+                    <span class="status-dot status-offline" id="sidebar-status-hasanoglan-isikkure"></span>
+                </a>
+                <a href="/Home/HasanoglanBelardi" class="menu-item">
+                    <i class="fas fa-industry"></i>
+                    BELARDİ
+                    <span class="status-dot status-offline" id="sidebar-status-hasanoglan-belardi"></span>
+                </a>
+                <a href="/Home/HasanoglanIpsi" class="menu-item">
+                    <i class="fas fa-industry"></i>
+                    İPSİ
+                    <span class="status-dot status-offline" id="sidebar-status-hasanoglan-ipsi"></span>
+                </a>
+            </div>
+            <div class="menu-group">
+                <div class="menu-group-title">HAMAL GES</div>
+                <a href="/Home/Hamal" class="menu-item">
+                    <i class="fas fa-industry"></i>
+                    HAMAL
+                    <span class="status-dot status-offline" id="sidebar-status-hamal"></span>
+                </a>
+            </div>
+            <div class="menu-group" style="margin-top: auto; border-top: 1px solid #2a3f5f; padding-top: 15px;">
+                <a href="/Home/Logout" class="menu-item" style="color: #f44336;">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Çıkış Yap
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Top Header with Total Power -->
+        <div class="top-header">
+            <div class="header-left">
+                <div class="company-info">
+                    <div class="company-title">YBT ENERJİ</div>
+                    <div class="main-title">TOPLAM ÜRETİM</div>
+                </div>
+                <div class="total-power-display">
+                    <span class="total-power-value" id="totalPower">--</span>
+                    <span class="total-power-unit">kW</span>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="header-stat">
+                    <div class="header-stat-value green" id="totalEnergy">--</div>
+                    <div class="header-stat-label">Toplam Üretim (MWh)</div>
+                </div>
+                <div class="header-stat">
+                    <div class="header-stat-value pink" id="onlineCount">--</div>
+                    <div class="header-stat-label">Aktif Santral</div>
+                </div>
+                <div class="datetime">
+                    <div id="currentDate">--</div>
+                    <div class="time" id="currentTime">--</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- KORKUTELİ GES -->
+        <div class="section-title">KORKUTELİ GES</div>
+        <div class="plants-grid">
+            <a href="/Home/Index" class="plant-card" id="card-korkuteli-isikkure">
+                <div class="plant-header">
+                    <span class="plant-name"><i class="fas fa-solar-panel me-2"></i>ISIKKURE</span>
+                    <span class="status-dot status-offline" id="status-korkuteli-isikkure"></span>
+                </div>
+                <div class="plant-metrics">
+                    <div class="metric">
+                        <div class="metric-value power" id="power-korkuteli-isikkure">--</div>
+                        <div class="metric-label">Güç (kW)</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value voltage" id="voltage-korkuteli-isikkure">--</div>
+                        <div class="metric-label">Gerilim (V)</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value current" id="current-korkuteli-isikkure">--</div>
+                        <div class="metric-label">Akım (A)</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value energy" id="energy-korkuteli-isikkure">--</div>
+                        <div class="metric-label">Üretim (MWh)</div>
+                    </div>
+                </div>
+            </a>
+            <a href="/Home/IsikYuvar" class="plant-card" id="card-korkuteli-isikyuvar">
+                <div class="plant-header">
+                    <span class="plant-name"><i class="fas fa-solar-panel me-2"></i>ISIKYUVAR</span>
+                    <span class="status-dot status-offline" id="status-korkuteli-isikyuvar"></span>
+                </div>
+                <div class="plant-metrics">
+                    <div class="metric">
+                        <div class="metric-value power" id="power-korkuteli-isikyuvar">--</div>
+                        <div class="metric-label">Güç (kW)</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value voltage" id="voltage-korkuteli-isikyuvar">--</div>
+                        <div class="metric-label">Gerilim (V)</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value current" id="current-korkuteli-isikyuvar">--</div>
+                        <div class="metric-label">Akım (A)</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value energy" id="energy-korkuteli-isikyuvar">--</div>
+                        <div class="metric-label">Üretim (MWh)</div>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- HASANOĞLAN GES -->
+        <div class="section-title">HASANOĞLAN GES</div>
+        <div class="plants-grid">
+            <a href="/Home/Hasanoglan" class="plant-card" id="card-hasanoglan-ybt">
+                <div class="plant-header">
+                    <span class="plant-name"><i class="fas fa-solar-panel me-2"></i>YBT</span>
+                    <span class="status-dot status-offline" id="status-hasanoglan-ybt"></span>
+                </div>
+                <div class="plant-metrics">
+                    <div class="metric">
+                        <div class="metric-value power" id="power-hasanoglan-ybt">--</div>
+                        <div class="metric-label">Güç (kW)</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value voltage" id="voltage-hasanoglan-ybt">--</div>
+                        <div class="metric-label">Gerilim (V)</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value current" id="current-hasanoglan-ybt">--</div>
+                        <div class="metric-label">Akım (A)</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value energy" id="energy-hasanoglan-ybt">--</div>
+                        <div class="metric-label">Üretim (MWh)</div>
+                    </div>
+                </div>
+            </a>
+            <a href="/Home/HasanoglanIsikYuvar" class="plant-card" id="card-hasanoglan-isikyuvar">
+                <div class="plant-header">
+                    <span class="plant-name"><i class="fas fa-solar-panel me-2"></i>IŞIKYUVAR</span>
+                    <span class="status-dot status-offline" id="status-hasanoglan-isikyuvar"></span>
+                </div>
+                <div class="plant-metrics">
+                    <div class="metric">
+                        <div class="metric-value power" id="power-hasanoglan-isikyuvar">--</div>
+                        <div class="metric-label">Güç (kW)</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value voltage" id="voltage-hasanoglan-isikyuvar">--</div>
+                        <div class="metric-label">Gerilim (V)</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value current" id="current-hasanoglan-isikyuvar">--</div>
+                        <div class="metric-label">Akım (A)</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value energy" id="energy-hasanoglan-isikyuvar">--</div>
+                        <div class="metric-label">Üretim (MWh)</div>
+                    </div>
+                </div>
+            </a>
+            <a href="/Home/HasanoglanIsikKure" class="plant-card" id="card-hasanoglan-isikkure">
+                <div class="plant-header">
+                    <span class="plant-name"><i class="fas fa-solar-panel me-2"></i>IŞIKKURE</span>
+                    <span class="status-dot status-offline" id="status-hasanoglan-isikkure"></span>
+                </div>
+                <div class="plant-metrics">
+                    <div class="metric">
+                        <div class="metric-value power" id="power-hasanoglan-isikkure">--</div>
+                        <div class="metric-label">Güç (kW)</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value voltage" id="voltage-hasanoglan-isikkure">--</div>
+                        <div class="metric-label">Gerilim (V)</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value current" id="current-hasanoglan-isikkure">--</div>
+                        <div class="metric-label">Akım (A)</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value energy" id="energy-hasanoglan-isikkure">--</div>
+                        <div class="metric-label">Üretim (MWh)</div>
+                    </div>
+                </div>
+            </a>
+            <a href="/Home/HasanoglanBelardi" class="plant-card" id="card-hasanoglan-belardi">
+                <div class="plant-header">
+                    <span class="plant-name"><i class="fas fa-solar-panel me-2"></i>BELARDİ</span>
+                    <span class="status-dot status-offline" id="status-hasanoglan-belardi"></span>
+                </div>
+                <div class="plant-metrics">
+                    <div class="metric">
+                        <div class="metric-value power" id="power-hasanoglan-belardi">--</div>
+                        <div class="metric-label">Güç (kW)</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value voltage" id="voltage-hasanoglan-belardi">--</div>
+                        <div class="metric-label">Gerilim (V)</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value current" id="current-hasanoglan-belardi">--</div>
+                        <div class="metric-label">Akım (A)</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value energy" id="energy-hasanoglan-belardi">--</div>
+                        <div class="metric-label">Üretim (MWh)</div>
+                    </div>
+                </div>
+            </a>
+            <a href="/Home/HasanoglanIpsi" class="plant-card" id="card-hasanoglan-ipsi">
+                <div class="plant-header">
+                    <span class="plant-name"><i class="fas fa-solar-panel me-2"></i>İPSİ</span>
+                    <span class="status-dot status-offline" id="status-hasanoglan-ipsi"></span>
+                </div>
+                <div class="plant-metrics">
+                    <div class="metric">
+                        <div class="metric-value power" id="power-hasanoglan-ipsi">--</div>
+                        <div class="metric-label">Güç (kW)</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value voltage" id="voltage-hasanoglan-ipsi">--</div>
+                        <div class="metric-label">Gerilim (V)</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value current" id="current-hasanoglan-ipsi">--</div>
+                        <div class="metric-label">Akım (A)</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value energy" id="energy-hasanoglan-ipsi">--</div>
+                        <div class="metric-label">Üretim (MWh)</div>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- HAMAL GES -->
+        <div class="section-title">HAMAL GES</div>
+        <div class="plants-grid">
+            <a href="/Home/Hamal" class="plant-card" id="card-hamal">
+                <div class="plant-header">
+                    <span class="plant-name"><i class="fas fa-solar-panel me-2"></i>HAMAL</span>
+                    <span class="status-dot status-offline" id="status-hamal"></span>
+                </div>
+                <div class="plant-metrics">
+                    <div class="metric">
+                        <div class="metric-value power" id="power-hamal">--</div>
+                        <div class="metric-label">Güç (kW)</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value voltage" id="voltage-hamal">--</div>
+                        <div class="metric-label">Gerilim (V)</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value current" id="current-hamal">--</div>
+                        <div class="metric-label">Akım (A)</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value energy" id="energy-hamal">--</div>
+                        <div class="metric-label">Üretim (MWh)</div>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.0/signalr.min.js"></script>
+    
+    <script>
+        // Santral verileri
+        const santralData = {
+            'korkuteli-isikkure': { power: 0, voltage: 0, current: 0, energy: 0, online: false },
+            'korkuteli-isikyuvar': { power: 0, voltage: 0, current: 0, energy: 0, online: false },
+            'hasanoglan-ybt': { power: 0, voltage: 0, current: 0, energy: 0, online: false },
+            'hasanoglan-isikyuvar': { power: 0, voltage: 0, current: 0, energy: 0, online: false },
+            'hasanoglan-isikkure': { power: 0, voltage: 0, current: 0, energy: 0, online: false },
+            'hasanoglan-belardi': { power: 0, voltage: 0, current: 0, energy: 0, online: false },
+            'hasanoglan-ipsi': { power: 0, voltage: 0, current: 0, energy: 0, online: false },
+            'hamal': { power: 0, voltage: 0, current: 0, energy: 0, online: false }
+        };
+
+        // Hub bağlantıları
+        const hubs = [
+            { id: 'korkuteli-isikkure', url: '/energyhub' },
+            { id: 'korkuteli-isikyuvar', url: '/isikYuvarHub' },
+            { id: 'hasanoglan-ybt', url: '/hasanoglanHub' },
+            { id: 'hasanoglan-isikyuvar', url: '/hasanoglanIsikYuvarHub' },
+            { id: 'hasanoglan-isikkure', url: '/hasanoglanIsikKureHub' },
+            { id: 'hasanoglan-belardi', url: '/hasanoglanBelardiHub' },
+            { id: 'hasanoglan-ipsi', url: '/hasanoglanIpsiHub' },
+            { id: 'hamal', url: '/hamalHub' }
+        ];
+
+        // Her hub için bağlantı kur
+        hubs.forEach(hub => {
+            const connection = new signalR.HubConnectionBuilder()
+                .withUrl(hub.url)
+                .withAutomaticReconnect()
+                .build();
+
+            connection.on("ReceiveEnergyData", (data) => {
+                updateSantralData(hub.id, data);
+            });
+
+            connection.start()
+                .then(() => {
+                    console.log(`${hub.id} hub connected`);
+                    // Veri gelene kadar offline kalacak, veri gelince updateSantralData içinde yeşil yapılıyor
+                })
+                .catch(err => {
+                    console.error(`${hub.id} hub error:`, err);
+                    santralData[hub.id].online = false;
+                    updateStatus(hub.id, false);
+                });
+
+            connection.onclose(() => {
+                santralData[hub.id].online = false;
+                updateStatus(hub.id, false);
+            });
+
+            connection.onreconnected(() => {
+                santralData[hub.id].online = true;
+                updateStatus(hub.id, true);
+            });
+        });
+
+        // Her santral için güç çarpanları
+        const powerMultipliers = {
+            'korkuteli-isikkure': -1,           // direkt kW * -1
+            'korkuteli-isikyuvar': -0.00001,    // W -> kW (*0.00001) * -1
+            'hasanoglan-ybt': -0.001,           // W -> kW (*0.001) * -1
+            'hasanoglan-isikyuvar': -0.001,     // W -> kW * -1
+            'hasanoglan-isikkure': -0.001,      // W -> kW * -1
+            'hasanoglan-belardi': -0.001,       // W -> kW * -1
+            'hasanoglan-ipsi': -0.001,          // W -> kW * -1
+            'hamal': -1                         // direkt kW * -1
+        };
+
+        // Her santral için gerilim çarpanları
+        const voltageMultipliers = {
+            'korkuteli-isikkure': 1,           // direkt V
+            'korkuteli-isikyuvar': 0.001,      // mV -> V
+            'hasanoglan-ybt': 1,               // direkt V
+            'hasanoglan-isikyuvar': 1,         // direkt V
+            'hasanoglan-isikkure': 1,          // direkt V
+            'hasanoglan-belardi': 1,           // direkt V
+            'hasanoglan-ipsi': 1,              // direkt V
+            'hamal': 1                         // direkt V
+        };
+
+        // Her santral için akım çarpanları
+        const currentMultipliers = {
+            'korkuteli-isikkure': 0.001,       // mA -> A
+            'korkuteli-isikyuvar': 0.001,      // mA -> A
+            'hasanoglan-ybt': 0.001,           // mA -> A
+            'hasanoglan-isikyuvar': 0.001,     // mA -> A
+            'hasanoglan-isikkure': 0.001,      // mA -> A
+            'hasanoglan-belardi': 0.001,       // mA -> A
+            'hasanoglan-ipsi': 0.001,          // mA -> A
+            'hamal': 1                         // direkt A
+        };
+
+        function updateSantralData(santralId, data) {
+            // Her santral için ilgili çarpanları uygula
+            const powerMult = powerMultipliers[santralId] || 1;
+            const voltageMult = voltageMultipliers[santralId] || 1;
+            const currentMult = currentMultipliers[santralId] || 1;
+            
+            santralData[santralId].power = (data.activePower || 0) * powerMult;
+            santralData[santralId].voltage = (data.vab || 0) * voltageMult;
+            santralData[santralId].current = (data.ia || 0) * currentMult;
+            
+            // YBT için wpPlus, diğerleri için wpMinus kullan
+            if (santralId === 'hasanoglan-ybt') {
+                santralData[santralId].energy = (data.wpPlus || 0) / 1000; // MWh - Aktif Enerji Import
+            } else {
+                santralData[santralId].energy = (data.wpMinus || 0) / 1000; // MWh - Aktif Enerji Export
+            }
+
+            // Güç ve enerji 0 ise haberleşme hatası kabul et
+            const hasValidData = Math.abs(santralData[santralId].power) > 0.01 || santralData[santralId].energy > 0.01;
+            santralData[santralId].online = hasValidData;
+
+            // UI güncelle
+            document.getElementById(`power-${santralId}`).textContent = santralData[santralId].power.toFixed(2);
+            document.getElementById(`voltage-${santralId}`).textContent = Math.round(santralData[santralId].voltage);
+            document.getElementById(`current-${santralId}`).textContent = santralData[santralId].current.toFixed(2);
+            document.getElementById(`energy-${santralId}`).textContent = santralData[santralId].energy.toFixed(2);
+            
+            updateStatus(santralId, hasValidData);
+            updateTotals();
+        }
+
+        function updateStatus(santralId, online) {
+            // Card status
+            const statusEl = document.getElementById(`status-${santralId}`);
+            if (statusEl) {
+                statusEl.className = `status-dot ${online ? 'status-online' : 'status-offline'}`;
+            }
+            // Sidebar status
+            const sidebarStatusEl = document.getElementById(`sidebar-status-${santralId}`);
+            if (sidebarStatusEl) {
+                sidebarStatusEl.className = `status-dot ${online ? 'status-online' : 'status-offline'}`;
+            }
+        }
+
+        function updateTotals() {
+            let totalPower = 0;
+            let totalEnergy = 0;
+            let onlineCount = 0;
+
+            Object.values(santralData).forEach(s => {
+                if (s.online) {
+                    onlineCount++;
+                    totalPower += s.power;
+                    totalEnergy += s.energy;
+                }
+            });
+
+            document.getElementById('totalPower').textContent = totalPower.toFixed(2);
+            document.getElementById('totalEnergy').textContent = totalEnergy.toFixed(2);
+            document.getElementById('onlineCount').textContent = `${onlineCount} / 8`;
+        }
+
+        // Saat güncelle
+        function updateClock() {
+            const now = new Date();
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('currentDate').textContent = now.toLocaleDateString('tr-TR', options);
+            document.getElementById('currentTime').textContent = now.toLocaleTimeString('tr-TR');
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+    </script>
+</body>
+</html>

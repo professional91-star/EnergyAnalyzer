@@ -1,5 +1,5 @@
 @{
-    ViewData["Title"] = "ISIKYUVAR Enerji Analizörü";
+    ViewData["Title"] = "Hasanoğlan GES Enerji Analizörü";
 }
 
 <!DOCTYPE html>
@@ -93,20 +93,20 @@
             </a>
             <div class="navbar-nav me-auto">
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle text-white" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <a class="nav-link dropdown-toggle text-white-50" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="fas fa-solar-panel me-1"></i> KORKUTELİ GES
                     </a>
                     <ul class="dropdown-menu">
                         <li><a class="dropdown-item" href="/Home/Index"><i class="fas fa-industry me-1"></i> ISIKKURE</a></li>
-                        <li><a class="dropdown-item active" href="/Home/IsikYuvar"><i class="fas fa-industry me-1"></i> ISIKYUVAR</a></li>
+                        <li><a class="dropdown-item" href="/Home/IsikYuvar"><i class="fas fa-industry me-1"></i> ISIKYUVAR</a></li>
                     </ul>
                 </li>
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle text-white-50" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <a class="nav-link dropdown-toggle active text-white" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="fas fa-solar-panel me-1"></i> HASANOĞLAN GES
                     </a>
                     <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="/Home/Hasanoglan"><i class="fas fa-industry me-1"></i> YBT</a></li>
+                        <li><a class="dropdown-item active" href="/Home/Hasanoglan"><i class="fas fa-industry me-1"></i> YBT</a></li>
                         <li><a class="dropdown-item" href="/Home/HasanoglanIsikYuvar"><i class="fas fa-industry me-1"></i> IŞIKYUVAR</a></li>
                         <li><a class="dropdown-item" href="/Home/HasanoglanIsikKure"><i class="fas fa-industry me-1"></i> IŞIKKURE</a></li>
                         <li><a class="dropdown-item" href="/Home/HasanoglanBelardi"><i class="fas fa-industry me-1"></i> BELARDİ</a></li>
@@ -133,7 +133,7 @@
             <div class="col-12">
                 <div class="alert alert-info mb-0">
                     <i class="fas fa-solar-panel me-2"></i>
-                    <strong>Santral Adı:</strong> ISIKYUVAR | 
+                    <strong>Santral Adı:</strong> HASANOGLAN GES - YBT | 
                     <strong>Son Güncelleme:</strong> <span id="lastUpdate" class="timestamp">--</span>
                 </div>
             </div>
@@ -144,7 +144,7 @@
             <div class="col-12">
                 <div class="card">
                     <div class="card-header voltage">
-                        <i class="fas fa-bolt me-2"></i>Gerilim Değerleri
+                        <i class="fas fa-bolt me-2"></i>Gerilim ve Akım Değerleri
                     </div>
                     <div class="card-body">
                         <div class="row text-center">
@@ -187,21 +187,25 @@
                     </div>
                     <div class="card-body">
                         <div class="row text-center">
-                            <div class="col-md-3">
+                            <div class="col">
                                 <div class="value-display" id="activePower">--</div>
                                 <div class="unit">Aktif Güç (kW)</div>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col">
                                 <div class="value-display" id="reactivePower">--</div>
                                 <div class="unit">Reaktif Güç (kVAR)</div>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col">
                                 <div class="value-display" id="apparentPower">--</div>
                                 <div class="unit">Görünür Güç (kVA)</div>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col">
                                 <div class="value-display" id="powerFactor">--</div>
                                 <div class="unit">Güç Faktörü</div>
+                            </div>
+                            <div class="col">
+                                <div class="value-display" id="frequency">--</div>
+                                <div class="unit">Frekans (Hz)</div>
                             </div>
                         </div>
                     </div>
@@ -464,28 +468,29 @@
             }
         });
 
-        // SignalR bağlantısı - ISIKYUVAR Hub'a bağlan
+        // SignalR bağlantısı - Hasanoglan Hub'a bağlan
         const connection = new signalR.HubConnectionBuilder()
-            .withUrl("/isikYuvarHub")
+            .withUrl("/hasanoglanHub")
             .withAutomaticReconnect()
             .build();
 
         connection.on("ReceiveEnergyData", function (data) {
-            // Değerleri güncelle (voltaj çarpan: 0.001, Vca: 0.01, akım: 0.001)
-            document.getElementById('vab').textContent = Math.round(data.vab * 0.001);
-            document.getElementById('vbc').textContent = Math.round(data.vbc * 0.001);
-            document.getElementById('vca').textContent = Math.round(data.vca * 0.01);
-            document.getElementById('ia').textContent = (data.ia * 0.001).toFixed(3);
-            document.getElementById('ib').textContent = (data.ib * 0.001).toFixed(3);
-            document.getElementById('ic').textContent = (data.ic * 0.001).toFixed(3);
-            document.getElementById('activePower').textContent = (data.activePower * -0.00001).toFixed(2);
-            document.getElementById('reactivePower').textContent = (data.reactivePower * 0.0001).toFixed(4);
-            document.getElementById('apparentPower').textContent = (data.apparentPower * 0.00001).toFixed(2);
-            document.getElementById('powerFactor').textContent = data.powerFactor.toFixed(3);
-            document.getElementById('wpPlus').textContent = (data.wpPlus * 0.0001).toFixed(4);
-            document.getElementById('wpMinus').textContent = (data.wpMinus * 0.0001).toFixed(4);
-            document.getElementById('wqPlus').textContent = (data.wqPlus * 0.0001).toFixed(4);
-            document.getElementById('wqMinus').textContent = (data.wqMinus * 0.0001).toFixed(4);
+            // Değerleri güncelle (Akım, Güç, Güç Faktörü ve Frekans 0.001 ile çarpılıyor)
+            document.getElementById('vab').textContent = data.vab.toFixed(1);
+            document.getElementById('vbc').textContent = data.vbc.toFixed(1);
+            document.getElementById('vca').textContent = data.vca.toFixed(1);
+            document.getElementById('ia').textContent = (data.ia * 0.001).toFixed(2);
+            document.getElementById('ib').textContent = (data.ib * 0.001).toFixed(2);
+            document.getElementById('ic').textContent = (data.ic * 0.001).toFixed(2);
+            document.getElementById('activePower').textContent = (data.activePower * -0.001).toFixed(2);
+            document.getElementById('reactivePower').textContent = (data.reactivePower * 0.001).toFixed(2);
+            document.getElementById('apparentPower').textContent = (data.apparentPower * 0.001).toFixed(2);
+            document.getElementById('powerFactor').textContent = (data.powerFactor * 0.001).toFixed(3);
+            document.getElementById('frequency').textContent = (data.frequency * 0.001).toFixed(2);
+            document.getElementById('wpPlus').textContent = (data.wpPlus * 0.001).toFixed(4);
+            document.getElementById('wpMinus').textContent = (data.wpMinus * 0.001).toFixed(4);
+            document.getElementById('wqPlus').textContent = (data.wqPlus * 0.001).toFixed(4);
+            document.getElementById('wqMinus').textContent = (data.wqMinus * 0.001).toFixed(4);
 
             // Zaman damgası
             const now = new Date();
@@ -504,12 +509,12 @@
             }
 
             timeLabels.push(timeStr);
-            voltageData.vab.push(data.vab * 0.001);
-            voltageData.vbc.push(data.vbc * 0.001);
-            voltageData.vca.push(data.vca * 0.01);
-            powerData.active.push(data.activePower * -0.00001);
-            powerData.reactive.push(data.reactivePower * 0.0001);
-            powerData.apparent.push(data.apparentPower * 0.00001);
+            voltageData.vab.push(data.vab);
+            voltageData.vbc.push(data.vbc);
+            voltageData.vca.push(data.vca);
+            powerData.active.push(data.activePower * -0.001);
+            powerData.reactive.push(data.reactivePower * 0.001);
+            powerData.apparent.push(data.apparentPower * 0.001);
 
             voltageChart.update('none');
             powerChart.update('none');
@@ -549,7 +554,7 @@
                 button.disabled = true;
                 button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Gönderiliyor...';
                 
-                const response = await fetch('/api/isikyuvar/control', {
+                const response = await fetch('/api/hasanoglan/control', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'

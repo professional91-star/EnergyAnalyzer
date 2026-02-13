@@ -92,16 +92,37 @@
                 CGT PowerMeter
             </a>
             <div class="navbar-nav me-auto">
-                <a class="nav-link active text-white" href="/Home/Index">
-                    <i class="fas fa-industry me-1"></i> ISIKKURE
-                </a>
-                <a class="nav-link text-white-50" href="/Home/IsikYuvar">
-                    <i class="fas fa-industry me-1"></i> ISIKYUVAR
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle text-white" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-solar-panel me-1"></i> KORKUTELİ GES
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item active" href="/Home/Index"><i class="fas fa-industry me-1"></i> ISIKKURE</a></li>
+                        <li><a class="dropdown-item" href="/Home/IsikYuvar"><i class="fas fa-industry me-1"></i> ISIKYUVAR</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle text-white-50" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-solar-panel me-1"></i> HASANOĞLAN GES
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="/Home/Hasanoglan"><i class="fas fa-industry me-1"></i> YBT</a></li>
+                        <li><a class="dropdown-item" href="/Home/HasanoglanIsikYuvar"><i class="fas fa-industry me-1"></i> IŞIKYUVAR</a></li>
+                        <li><a class="dropdown-item" href="/Home/HasanoglanIsikKure"><i class="fas fa-industry me-1"></i> IŞIKKURE</a></li>
+                        <li><a class="dropdown-item" href="/Home/HasanoglanBelardi"><i class="fas fa-industry me-1"></i> BELARDİ</a></li>
+                        <li><a class="dropdown-item" href="/Home/HasanoglanIpsi"><i class="fas fa-industry me-1"></i> İPSİ</a></li>
+                    </ul>
+                </li>
+                <a class="nav-link text-white-50" href="/Home/Hamal">
+                    <i class="fas fa-solar-panel me-1"></i> HAMAL GES
                 </a>
             </div>
             <span class="text-white">
                 <span class="status-indicator status-online" id="statusIndicator"></span>
                 <span id="connectionStatus">Bağlı</span>
+                <a href="/Home/Logout" class="btn btn-outline-danger btn-sm ms-3">
+                    <i class="fas fa-sign-out-alt"></i> Çıkış
+                </a>
             </span>
         </div>
     </nav>
@@ -457,7 +478,7 @@
             document.getElementById('ia').textContent = (data.ia * 0.001).toFixed(3);
             document.getElementById('ib').textContent = (data.ib * 0.001).toFixed(3);
             document.getElementById('ic').textContent = (data.ic * 0.001).toFixed(3);
-            document.getElementById('activePower').textContent = data.activePower.toFixed(2);
+            document.getElementById('activePower').textContent = (data.activePower * -1).toFixed(2);
             document.getElementById('reactivePower').textContent = data.reactivePower.toFixed(2);
             document.getElementById('apparentPower').textContent = data.apparentPower.toFixed(2);
             document.getElementById('powerFactor').textContent = data.powerFactor.toFixed(3);
@@ -486,7 +507,7 @@
             voltageData.vab.push(data.vab);
             voltageData.vbc.push(data.vbc);
             voltageData.vca.push(data.vca);
-            powerData.active.push(data.activePower);
+            powerData.active.push(data.activePower * -1);
             powerData.reactive.push(data.reactivePower);
             powerData.apparent.push(data.apparentPower);
 

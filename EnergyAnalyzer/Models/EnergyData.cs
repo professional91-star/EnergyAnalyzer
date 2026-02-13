@@ -50,9 +50,16 @@ namespace EnergyAnalyzer.Models
         [JsonPropertyName("wqMinus")]
         public float ReactiveEnergyExport { get; set; } // kVARh - H2_WQminus
         
+        // Yeni alanlar (Hasanoglan için)
+        [JsonPropertyName("frequency")]
+        public float Frequency { get; set; } // Hz
+        
+        [JsonPropertyName("powerFactorDirect")]
+        public float PowerFactorDirect { get; set; } // Doğrudan okunan PF değeri
+        
         // Hesaplanan Değerler
         [JsonPropertyName("powerFactor")]
-        public float PowerFactor => ApparentPower > 0 ? ActivePower / ApparentPower : 0;
+        public float PowerFactor => PowerFactorDirect != 0 ? PowerFactorDirect : (ApparentPower > 0 ? ActivePower / ApparentPower : 0);
         
         public float TotalActivePower => ActivePower;
         public float NetEnergy => ActiveEnergyExport - ActiveEnergyImport;
